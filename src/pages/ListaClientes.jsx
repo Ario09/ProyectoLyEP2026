@@ -9,7 +9,11 @@ const ListaClientes = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  
+  // H21: flag isMounted para evitar setState en componente desmontado
   useEffect(() => {
+    let isMounted = true;
+
     fetch("https://fakestoreapi.com/users")
       .then((res) => {
         if (!res.ok) {
@@ -18,23 +22,41 @@ const ListaClientes = () => {
         return res.json();
       })
       .then((data) => {
-        setClientes(data);
-        setLoading(false);
+        if (isMounted) {
+          setClientes(data);
+          setLoading(false);
+        }
       })
       .catch(() => {
-        setError(true);
-        setLoading(false);
+        if (isMounted) {
+          setError(true);
+          setLoading(false);
+        }
       });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
+  // H22: debounce de 300ms para el filtro de búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setBusquedaDebounced(busqueda);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [busqueda]);
+
+  // H21: filtro usa busquedaDebounced (no busqueda directa)
   const clientesFiltrados = clientes.filter(
     (cliente) =>
-      cliente.name.lastname
+      (cliente.name?.lastname ?? "")
         .toLowerCase()
-        .includes(busqueda.toLowerCase()) ||
-      cliente.address.city
+        .includes(busquedaDebounced.toLowerCase()) ||
+      (cliente.address?.city ?? "")
         .toLowerCase()
-        .includes(busqueda.toLowerCase())
+        .includes(busquedaDebounced.toLowerCase())
   );
 
   if (loading) {
@@ -93,14 +115,14 @@ const ListaClientes = () => {
               <td>{cliente.id}</td>
 
               <td>
-                {cliente.name.firstname} {cliente.name.lastname}
+                {cliente.name?.firstname} {cliente.name?.lastname}
               </td>
 
               <td>{cliente.email}</td>
 
               <td>{cliente.phone}</td>
 
-              <td>{cliente.address.city}</td>
+              <td>{cliente.address?.city}</td>
 
               <td>
                 <Link
