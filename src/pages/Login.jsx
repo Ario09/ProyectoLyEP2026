@@ -9,8 +9,10 @@ const Login = () => {
   const [password, setPassword] = useState('')
   const [sector, setSector] = useState('')
   const [errores, setErrores] = useState({})
+  const [cargando, setCargando] = useState(false)
   const { setAdmin } = useAutorizaciones()
   const navigate = useNavigate()
+
   const validar = () => {
     const nuevosErrores = {}
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -36,26 +38,33 @@ const Login = () => {
     setErrores(nuevosErrores)
     return Object.keys(nuevosErrores).length === 0
   }
-  const manejarSubmit = (e) => {
+
+  const manejarSubmit = async (e) => {
     e.preventDefault()
     if (!validar()) return
-    const usuario = AutorizacionesService.login(
-      email,
-      password,
-      sector
-    )
-    if (!usuario) {
-     alert('Verifique los datos')
-      return
+
+    setCargando(true)
+
+    try {
+      const usuario = AutorizacionesService.login(email, password, sector)
+
+      if (!usuario) {
+        alert('Verifique los datos') // H17: se mantiene como estaba
+        return
+      }
+
+      localStorage.setItem("role", usuario.sector)
+      setAdmin({
+        nombre: usuario.nombre,
+        email: usuario.email,
+        sector: usuario.sector
+      })
+      navigate('/')
+    } finally {
+      setCargando(false)
     }
-    localStorage.setItem("role", usuario.sector)
-    setAdmin({
-      nombre: usuario.nombre,
-      email: usuario.email,
-      sector: usuario.sector
-    })
-    navigate('/')
   }
+
   return (
     <div className="login-container">
       <h1>Iniciar Sesión</h1>
@@ -65,11 +74,13 @@ const Login = () => {
         <p style={{ color: 'red', minHeight: '18px' }}>
           {errores.email || ' '}
         </p>
+
         <label>Contraseña:</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <p style={{ color: 'red', minHeight: '18px' }}>
           {errores.password || ' '}
         </p>
+
         <label>Sector:</label>
         <select value={sector} onChange={(e) => setSector(e.target.value)}>
           <option value="">Seleccione un sector</option>
@@ -79,7 +90,10 @@ const Login = () => {
         <p style={{ color: 'red', minHeight: '18px' }}>
           {errores.sector || ' '}
         </p>
-        <button type="submit">Ingresar</button>
+
+        <button type="submit" disabled={cargando}>
+          {cargando ? 'Ingresando...' : 'Ingresar'}
+        </button>
       </form>
     </div>
   )
