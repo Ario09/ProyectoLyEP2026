@@ -6,6 +6,7 @@ import FormCliente from "../components/FormCliente";
 const ListaClientes = () => {
   const [clientes, setClientes] = useState([]);
   const [busqueda, setBusqueda] = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState(""); // ← AGREGAR ESTA
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
